@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Secret Admin — PDS Room Finder</title>
+  <style>
+    :root{
+      --bg:#071525; --card:#0F2740; --accent:#3E7CB1; --muted:#b0c7e1;
+      --danger:#d9534f;
+    }
+    *{box-sizing:border-box}
+    body{margin:0; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; background:var(--bg); color:#fff; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px}
+    .wrap{width:100%; max-width:1000px}
+
+    .card{background:var(--card); padding:18px; border-radius:12px; box-shadow:0 8px 30px rgba(0,0,0,0.45)}
+    h1{margin:0 0 6px; font-size:1.2rem}
+    p{color:var(--muted); margin:0 0 14px}
+
+    /* password view */
+    .password-area{display:flex; gap:10px; margin-bottom:12px}
+    input[type="password"], input[type="text"]{flex:1; padding:10px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.06); background:rgba(255,255,255,0.02); color:#fff; outline:none}
+    button{padding:10px 12px; border-radius:8px; border:0; background:var(--accent); color:#fff; cursor:pointer; font-weight:600; transition:opacity .12s}
+    button:hover{opacity:.92}
+    .danger{background:var(--danger)}
+
+    /* admin tools */
+    .admin-tools{display:none; margin-top:12px}
+    .row-form{display:flex; gap:10px; margin-bottom:12px; flex-wrap:wrap}
+    .row-form input{padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.06); background:rgba(255,255,255,0.02); color:#fff}
+    .small{font-size:0.9rem;color:var(--muted)}
+
+    table{width:100%; border-collapse:collapse; margin-top:6px}
+    th,td{padding:10px;border-bottom:1px solid rgba(255,255,255,0.04); text-align:left}
+    thead th{background:rgba(255,255,255,0.03); font-weight:600}
+    td .edit{display:inline-block;margin-left:8px;color:var(--muted);cursor:pointer}
+    td .edit:hover{color:#fff}
+
+    .controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+    .muted{color:var(--muted)}
+    .note{margin-top:10px;color:var(--muted);font-size:0.9rem}
+
+    .import-area{margin-top:12px}
+    textarea{width:100%; min-height:80px; padding:10px;border-radius:8px;background:rgba(255,255,255,0.02); color:#fff; border:1px solid rgba(255,255,255,0.04)}
+    .flex-right{display:flex;justify-content:flex-end; gap:8px}
+    .hidden{display:none}
+    @media (max-width:640px){ .password-area{flex-direction:column} .row-form{flex-direction:column}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>Secret Admin Page</h1>
+      <p class="small-muted">No links lead here. To open this page, type the path <code>/crazy-train</code> in your browser. Password required.</p>
+
+      <!-- PASSWORD -->
+      <div id="pw-area">
+        <div class="password-area">
+          <input id="pw-input" type="password" placeholder="Enter password to continue">
+          <button id="pw-btn">Unlock</button>
+        </div>
+        <div id="pw-feedback" class="muted small"></div>
+      </div>
+
+      <!-- ADMIN UI -->
+      <div id="admin" class="admin-tools hidden">
+        <p class="small">Add a new teacher (click Add to append):</p>
+
+        <div class="row-form">
+          <input id="new-name" type="text" placeholder="Full name (e.g. Mr. Somchai Wattanapan)">
+          <input id="new-room" type="text" placeholder="Room (e.g. Room 201)">
+          <button id="add-btn">Add</button>
+          <button id="clear-defaults" class="danger">Reset to defaults</button>
+        </div>
+
+        <div>
+          <table id="admin-table">
+            <thead>
+              <tr><th>Name</th><th>Room</th><th style="width:140px">Actions</th></tr>
+            </thead>
+            <tbody id="admin-body">
+              <!-- rows -->
+            </tbody>
+          </table>
+        </div>
+
+        <div class="controls">
+          <button id="save-btn">Save to storage</button>
+          <button id="export-btn">Export JSON</button>
+          <button id="import-open">Import JSON</button>
+        </div>
+
+        <div class="import-area hidden" id="import-area">
+          <p class="small">Paste JSON array of objects like <code>[{"name":"X","room":"Y"}]</code> and click Import.</p>
+          <textarea id="import-text" placeholder='[{"name":"Mr A","room":"Room 1"}]'></textarea>
+          <div class="flex-right">
+            <button id="import-cancel">Cancel</button>
+            <button id="import-btn">Import</button>
+          </div>
+        </div>
+
+        <div class="note">
+          Changes are saved in your browser's <code>localStorage</code> and will be reflected on the site's <code>/home</code> page in the same browser/device. To share across devices you'd need a server or cloud DB.
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  (function(){
+    const PASSWORD = "Ozzy Osbourne"; // exact match required
+    const STORAGE_KEY = 'pds_teachers';
+
+    const defaultData = [
+      {name:"Mr. Somchai Wattanapan", room:"Room 201"},
+      {name:"Ms. Siriporn Thanawan", room:"Room 305"},
+      {name:"Mr. Adisak Rattana", room:"Room 108"},
+      {name:"Mrs. Kanokwan Chaisiri", room:"Room 402"},
+      {name:"Mr. Preecha Sutthipong", room:"Room 214"}
+    ];
+
+    // elements
+    const pwInput = document.getElementById('pw-input');
+    const pwBtn = document.getElementById('pw-btn');
+    const pwFeedback = document.getElementById('pw-feedback');
+    const adminBlock = document.getElementById('admin');
+    const pwArea = document.getElementById('pw-area');
+
+    const newName = document.getElementById('new-name');
+    const newRoom = document.getElementById('new-room');
+    const addBtn = document.getElementById('add-btn');
+    const adminBody = document.getElementById('admin-body');
+    const saveBtn = document.getElementById('save-btn');
+    const exportBtn = document.getElementById('export-btn');
+    const importOpen = document.getElementById('import-open');
+    const importArea = document.getElementById('import-area');
+    const importText = document.getElementById('import-text');
+    const importBtn = document.getElementById('import-btn');
+    const importCancel = document.getElementById('import-cancel');
+    const importOpenBtn = document.getElementById('import-open');
+    const clearDefaultsBtn = document.getElementById('clear-defaults');
+
+    // storage helpers
+    function loadData(){
+      try{
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if(!raw) return defaultData.slice();
+        const parsed = JSON.parse(raw);
+        if(!Array.isArray(parsed)) return defaultData.slice();
+        return parsed;
+      }catch(e){
+        console.error("failed to load data", e);
+        return defaultData.slice();
+      }
+    }
+    function saveData(arr){
+      try{
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
+        // notify other tabs
+        window.dispatchEvent(new StorageEvent('storage', {key:STORAGE_KEY, newValue: JSON.stringify(arr)}));
+      }catch(e){
+        console.error("save failed", e);
+      }
+    }
+
+    // render admin table
+    function renderAdmin(){
+      const data = loadData();
+      adminBody.innerHTML = '';
+      data.forEach((r, idx) => {
+        const tr = document.createElement('tr');
+
+        const tdName = document.createElement('td');
+        const nameInput = document.createElement('input');
+        nameInput.type = 'text'; nameInput.value = r.name || ''; nameInput.style.width='95%';
+        tdName.appendChild(nameInput);
+
+        const tdRoom = document.createElement('td');
+        const roomInput = document.createElement('input');
+        roomInput.type = 'text'; roomInput.value = r.room || ''; roomInput.style.width='95%';
+        tdRoom.appendChild(roomInput);
+
+        const tdActions = document.createElement('td');
+        tdActions.style.textAlign = 'right';
+        const saveRow = document.createElement('button');
+        saveRow.textContent = 'Update';
+        saveRow.onclick = () => {
+          const all = loadData();
+          all[idx] = {name: nameInput.value.trim(), room: roomInput.value.trim()};
+          saveData(all); renderAdmin(); flash("Saved row");
+        };
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.textContent = 'Delete';
+        deleteBtn.style.marginLeft = '8px';
+        deleteBtn.style.background = 'var(--danger)';
+        deleteBtn.onclick = () => {
+          if(!confirm('Delete this row?')) return;
+          const all = loadData();
+          all.splice(idx,1);
+          saveData(all); renderAdmin(); flash("Deleted");
+        };
+
+        tdActions.appendChild(saveRow);
+        tdActions.appendChild(deleteBtn);
+
+        tr.appendChild(tdName); tr.appendChild(tdRoom); tr.appendChild(tdActions);
+        adminBody.appendChild(tr);
+      });
+
+      if(data.length === 0){
+        const tr = document.createElement('tr');
+        const td = document.createElement('td');
+        td.colSpan = 3; td.className = 'muted';
+        td.textContent = 'No rows. Use Add to create entries or import JSON.';
+        tr.appendChild(td);
+        adminBody.appendChild(tr);
+      }
+    }
+
+    // UI helpers
+    function flash(msg){
+      pwFeedback.textContent = msg;
+      setTimeout(()=>{ pwFeedback.textContent = ''; }, 2000);
+    }
+
+    // unlock handler
+    pwBtn.addEventListener('click', tryUnlock);
+    pwInput.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') tryUnlock(); });
+
+    function tryUnlock(){
+      const val = pwInput.value || '';
+      if(val === PASSWORD){
+        pwArea.style.display = 'none';
+        adminBlock.classList.remove('hidden');
+        adminBlock.style.display = 'block';
+        renderAdmin();
+      }else{
+        pwFeedback.textContent = 'Wrong password';
+        setTimeout(()=> pwFeedback.textContent = '', 2000);
+      }
+    }
+
+    // add new row
+    addBtn.addEventListener('click', ()=>{
+      const n = newName.value.trim();
+      const r = newRoom.value.trim();
+      if(!n || !r){ flash('Please provide both name and room'); return; }
+      const all = loadData();
+      all.push({name:n, room:r});
+      saveData(all);
+      newName.value=''; newRoom.value=''; renderAdmin(); flash('Added');
+    });
+
+    // save button (re-saves current table state)
+    saveBtn.addEventListener('click', ()=>{
+      const rows = adminBody.querySelectorAll('tr');
+      const arr = [];
+      rows.forEach(tr=>{
+        const inputs = tr.querySelectorAll('input');
+        if(inputs.length >= 2){
+          const nm = inputs[0].value.trim();
+          const rm = inputs[1].value.trim();
+          if(nm || rm) arr.push({name:nm, room:rm});
+        }
+      });
+      saveData(arr); renderAdmin(); flash('Saved to storage');
+    });
+
+    // export
+    exportBtn.addEventListener('click', ()=>{
+      const arr = loadData();
+      const blob = new Blob([JSON.stringify(arr, null, 2)], {type:'application/json'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'pds_teachers.json';
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(()=>URL.revokeObjectURL(url), 2000);
+    });
+
+    // import flow
+    importOpen.addEventListener('click', ()=>{ importArea.classList.toggle('hidden'); importText.value=''; });
+    importCancel.addEventListener('click', ()=>{ importArea.classList.add('hidden'); });
+    importBtn.addEventListener('click', ()=>{
+      const raw = importText.value.trim();
+      if(!raw){ flash('Paste JSON first'); return; }
+      try{
+        const parsed = JSON.parse(raw);
+        if(!Array.isArray(parsed)){ flash('JSON must be an array'); return; }
+        // basic validation: objects with name and room (strings)
+        const clean = parsed.map(it=>({ name: String(it.name||'').trim(), room: String(it.room||'').trim() }));
+        saveData(clean); importArea.classList.add('hidden'); renderAdmin(); flash('Imported');
+      }catch(e){
+        flash('Invalid JSON');
+      }
+    });
+
+    // reset to defaults
+    clearDefaultsBtn.addEventListener('click', ()=>{
+      if(!confirm('Reset to default sample data? This will overwrite current data.')) return;
+      saveData(defaultData.slice());
+      renderAdmin(); flash('Reset to defaults');
+    });
+
+    // allow unlocking if the user already has some token in sessionStorage (optional)
+    // (We intentionally keep it simple and re-check password each time.)
+  })();
+</script>
+</body>
+</html>
