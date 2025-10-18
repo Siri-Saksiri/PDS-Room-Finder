@@ -1,20 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PDS Room Finder | Find The Room</title>
+
   <!-- FAVICONS -->
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
   <link rel="manifest" href="/site.webmanifest">
-  <link rel="shortcut icon" href="/favicon-32x32.png" type="image/png">
 
-  <!-- META -->
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#0F1B2D">
-  <title>PDS Room Finder</title>
-
-  <!-- STYLES -->
+  <!-- STYLE -->
   <style>
     body {
       margin: 0;
@@ -26,33 +23,42 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      height: 100vh;
+      min-height: 100vh;
     }
 
-    img {
-      width: 180px;
-      height: auto;
-      margin-bottom: 30px;
-      filter: drop-shadow(0 0 8px rgba(62, 124, 177, 0.5));
+    header {
+      background-color: #1C4966;
+      width: 100%;
+      padding: 20px;
+      position: fixed;
+      top: 0;
+      left: 0;
+      text-align: center;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
     }
 
     h1 {
-      font-size: 3rem;
-      margin-bottom: 0.5em;
+      margin: 0;
+      font-size: 2rem;
+    }
+
+    main {
+      margin-top: 100px;
+      text-align: center;
     }
 
     p {
-      font-size: 1.2rem;
+      font-size: 1.1rem;
       color: #b0c7e1;
-      margin-bottom: 1.5em;
+      margin-bottom: 20px;
     }
 
     a {
       background-color: #3E7CB1;
       color: white;
       text-decoration: none;
-      padding: 12px 25px;
-      border-radius: 10px;
+      padding: 10px 20px;
+      border-radius: 8px;
       transition: background-color 0.3s ease;
     }
 
@@ -62,10 +68,14 @@
   </style>
 </head>
 <body>
-  <img src="PDS room finder.png" alt="PDS Room Finder Logo" />
-  <h1>Welcome to PDS Room Finder</h1>
-  <p>หาห้องพักของอาจารย์ด้วยความง่ายดาย</p>
-  <p>Find the teacher's room with ease.</p>
-  <a href="/home">Enter Room Finder</a>
+  <header>
+    <h1>PDS Room Finder</h1>
+  </header>
+
+  <main>
+    <h2>Find Your Classroom</h2>
+    <p>Search for your class, teacher, or meeting room easily.</p>
+    <a href="/">← Back to Main Page</a>
+  </main>
 </body>
 </html>
