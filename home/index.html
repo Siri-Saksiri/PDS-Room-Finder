@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PDS Room Finder | Find The Room</title>
+  <title>PDS Room Finder | Find Your Room</title>
 
   <!-- FAVICONS -->
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
@@ -19,38 +19,55 @@
       background-color: #0F1B2D;
       color: white;
       text-align: center;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
       min-height: 100vh;
     }
 
     header {
       background-color: #1C4966;
       width: 100%;
-      padding: 20px;
+      padding: 10px 30px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
       position: fixed;
       top: 0;
       left: 0;
-      text-align: center;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
     }
 
-    h1 {
+    .logo-section {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo-section img {
+      height: 45px;
+      width: auto;
+    }
+
+    .logo-section h1 {
       margin: 0;
-      font-size: 2rem;
+      font-size: 1.5rem;
     }
 
     main {
-      margin-top: 100px;
-      text-align: center;
+      margin-top: 120px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    h2 {
+      font-size: 2rem;
+      margin-bottom: 10px;
     }
 
     p {
       font-size: 1.1rem;
       color: #b0c7e1;
-      margin-bottom: 20px;
+      margin-bottom: 25px;
     }
 
     a {
@@ -69,7 +86,10 @@
 </head>
 <body>
   <header>
-    <h1>PDS Room Finder</h1>
+    <div class="logo-section">
+      <img src="/PDS room finder.png" alt="PDS Logo">
+      <h1>PDS Room Finder</h1>
+    </div>
   </header>
 
   <main>
